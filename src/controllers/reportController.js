@@ -1,26 +1,16 @@
-import Report from "../models/report-community.js";
-import { emitNewReport, emitReportLike } from "../utils/socket.js";
+// controllers/reportController.js
+import Report from "../models/report-community.js";  // ← Change this line
 
-/**
- * POST /api/reports
- * Create a new crowd report
- */
-export const createReport = async (req, res) => {
+// Submit a new crowd report
+export const submitReport = async (req, res) => {
   try {
-    const { station, level, remarks, userId, photo } = req.body;
+    const { station, level, remarks, userId } = req.body;
 
-    // Validation
+    console.log("📝 Submitting report:", { station, level, remarks, userId });
+
     if (!station || !level || !userId) {
-      return res.status(400).json({ 
-        success: false,
-        message: "Station, level, and userId are required" 
-      });
-    }
-
-    if (!["low", "moderate", "high"].includes(level)) {
-      return res.status(400).json({ 
-        success: false,
-        message: "Level must be 'low', 'moderate', or 'high'" 
+      return res.status(400).json({
+        error: "Station, level, and userId are required",
       });
     }
 
@@ -29,217 +19,164 @@ export const createReport = async (req, res) => {
       level,
       remarks: remarks || "",
       userId,
-      photo: photo || null,
-      likes: 0,
-      verified: false
     });
 
-    const savedReport = await newReport.save();
-
-    // Emit real-time update via Socket.IO
-    try {
-      await emitNewReport(savedReport);
-    } catch (socketError) {
-      console.error("Socket emission error:", socketError);
-      // Don't fail the request if socket fails
-    }
+    await newReport.save();
+    console.log("✅ Report saved:", newReport._id);
 
     res.status(201).json({
       success: true,
       message: "Report submitted successfully",
-      data: savedReport
+      report: {
+        id: newReport._id,
+        station: newReport.station,
+        level: newReport.level,
+        remarks: newReport.remarks,
+        userId: newReport.userId,
+        createdAt: newReport.createdAt,
+      },
     });
-  } catch (err) {
-    console.error("Error creating report:", err);
+  } catch (error) {
+    console.error("❌ Error submitting report:", error.message);
     res.status(500).json({ 
-      success: false,
-      message: "Error creating report", 
-      error: err.message 
+      error: error.message,
+      details: error.toString()
     });
   }
 };
 
-/**
- * GET /api/reports
- * Get all reports with pagination and filtering
- */
-export const getAllReports = async (req, res) => {
+// Get all recent reports
+export const getReports = async (req, res) => {
   try {
-    const { station, level, page = 1, limit = 20, sortBy = "createdAt" } = req.query;
-    
-    const query = {};
-    if (station) query.station = station;
-    if (level) query.level = level;
+    const { limit = 12, station } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    console.log("📊 Fetching reports - limit:", limit, "station:", station);
 
-    const reports = await Report.find(query)
-      .sort({ [sortBy]: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .select('-__v');
+    let filter = {};
+    if (station) {
+      filter.station = { $regex: station, $options: "i" };
+    }
 
-    const totalReports = await Report.countDocuments(query);
+    const reports = await Report.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    const formattedReports = reports.map((report) => ({
+      id: report._id,
+      station: report.station,
+      level: report.level,
+      remarks: report.remarks,
+      userId: report.userId,
+      likes: report.likes,
+      timeAgo: getTimeAgo(report.createdAt),
+      timestamp: report.createdAt.getTime(),
+    }));
+
+    console.log(`✅ Fetched ${formattedReports.length} reports`);
 
     res.status(200).json({
       success: true,
-      data: reports,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalReports / parseInt(limit)),
-        totalReports: totalReports,
-        hasMore: skip + reports.length < totalReports
-      }
+      count: formattedReports.length,
+      reports: formattedReports,
     });
-  } catch (err) {
-    console.error("Error fetching reports:", err);
-    res.status(500).json({ 
-      success: false,
-      message: "Error fetching reports", 
-      error: err.message 
+  } catch (error) {
+    console.error("❌ Error fetching reports:", error.message);
+    res.status(500).json({
+      error: error.message,
     });
   }
 };
 
-/**
- * GET /api/reports/:id
- * Get a specific report by ID
- */
-export const getReportById = async (req, res) => {
-  try {
-    const report = await Report.findById(req.params.id);
-    
-    if (!report) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Report not found" 
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: report
-    });
-  } catch (err) {
-    console.error("Error fetching report:", err);
-    res.status(500).json({ 
-      success: false,
-      message: "Error fetching report", 
-      error: err.message 
-    });
-  }
-};
-
-/**
- * PATCH /api/reports/:id/like
- * Like a report
- */
-export const likeReport = async (req, res) => {
-  try {
-    const report = await Report.findById(req.params.id);
-    
-    if (!report) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Report not found" 
-      });
-    }
-
-    report.likes += 1;
-    await report.save();
-
-    // Emit real-time like update via Socket.IO
-    try {
-      emitReportLike(report._id, report.station, report.likes);
-    } catch (socketError) {
-      console.error("Socket emission error:", socketError);
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Report liked successfully",
-      data: report
-    });
-  } catch (err) {
-    console.error("Error liking report:", err);
-    res.status(500).json({ 
-      success: false,
-      message: "Error liking report", 
-      error: err.message 
-    });
-  }
-};
-
-/**
- * DELETE /api/reports/:id
- * Delete a report (admin/owner only)
- */
-export const deleteReport = async (req, res) => {
-  try {
-    const { userId } = req.body; // In real app, get from auth middleware
-    
-    const report = await Report.findById(req.params.id);
-    
-    if (!report) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Report not found" 
-      });
-    }
-
-    // Check if user owns the report
-    if (report.userId !== userId) {
-      return res.status(403).json({ 
-        success: false,
-        message: "You don't have permission to delete this report" 
-      });
-    }
-
-    await Report.findByIdAndDelete(req.params.id);
-
-    res.status(200).json({
-      success: true,
-      message: "Report deleted successfully"
-    });
-  } catch (err) {
-    console.error("Error deleting report:", err);
-    res.status(500).json({ 
-      success: false,
-      message: "Error deleting report", 
-      error: err.message 
-    });
-  }
-};
-
-/**
- * GET /api/reports/recent/:station
- * Get recent reports for a station (last 2 hours)
- */
-export const getRecentReports = async (req, res) => {
+// Get reports for a specific station
+export const getReportsByStation = async (req, res) => {
   try {
     const { station } = req.params;
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const { limit = 10 } = req.query;
 
-    const reports = await Report.find({
-      station: station,
-      createdAt: { $gte: twoHoursAgo }
-    })
-    .sort({ createdAt: -1 })
-    .select('-__v');
+    console.log("🔍 Fetching reports for station:", station);
+
+    const reports = await Report.find({ station })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    const formattedReports = reports.map((report) => ({
+      id: report._id,
+      station: report.station,
+      level: report.level,
+      remarks: report.remarks,
+      timeAgo: getTimeAgo(report.createdAt),
+      timestamp: report.createdAt.getTime(),
+    }));
+
+    console.log(`✅ Found ${formattedReports.length} reports for ${station}`);
 
     res.status(200).json({
       success: true,
-      station: station,
-      count: reports.length,
-      data: reports,
-      timeRange: "Last 2 hours"
+      station,
+      count: formattedReports.length,
+      reports: formattedReports,
     });
-  } catch (err) {
-    console.error("Error fetching recent reports:", err);
-    res.status(500).json({ 
-      success: false,
-      message: "Error fetching recent reports", 
-      error: err.message 
+  } catch (error) {
+    console.error("❌ Error fetching station reports:", error.message);
+    res.status(500).json({
+      error: error.message,
     });
   }
 };
+
+// Get crowd status summary for all stations
+export const getCrowdSummary = async (req, res) => {
+  try {
+    console.log("📈 Generating crowd summary");
+
+    const summary = await Report.aggregate([
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $group: {
+          _id: "$station",
+          level: { $first: "$level" },
+          remarks: { $first: "$remarks" },
+          lastUpdate: { $first: "$createdAt" },
+          reportCount: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { lastUpdate: -1 },
+      },
+    ]);
+
+    const formattedSummary = summary.map((item) => ({
+      station: item._id,
+      level: item.level,
+      remarks: item.remarks,
+      lastUpdate: getTimeAgo(item.lastUpdate),
+      reportCount: item.reportCount,
+    }));
+
+    console.log(`✅ Generated summary for ${formattedSummary.length} stations`);
+
+    res.status(200).json({
+      success: true,
+      stationCount: formattedSummary.length,
+      summary: formattedSummary,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching crowd summary:", error.message);
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+};
+
+// Helper function to format time ago
+function getTimeAgo(date) {
+  const seconds = Math.floor((new Date() - date) / 1000);
+
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} mins ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+  if (seconds < 2592000) return `${Math.floor(seconds / 86400)} days ago`;
+  return `${Math.floor(seconds / 2592000)} months ago`;
+}

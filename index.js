@@ -1,78 +1,60 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
+import dotenv from "dotenv";
 import mongoose from "mongoose";
-import { createServer } from "http";
-import { initializeSocket } from "./utils/socket.js";
-
-// Import routes
-import stationRoutes from "./routes/stationRoutes.js";
-import reportRoutes from "./routes/reportRoutes.js";
-import routeRoutes from "./routes/routeRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import routeRoutes from "./src/routes/routeRoutes.js";
+import reportRoutes from "./src/routes/reportRoutes.js";
 
 dotenv.config();
-
 const app = express();
-const httpServer = createServer(app);
 
-// Initialize Socket.IO
-initializeSocket(httpServer);
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: "50mb" }));
 
-// Database connection
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+// Serve static files from data folder
+app.use("/data", express.static(path.join(__dirname, "data")));
 
-// Routes
-app.use("/api/stations", stationRoutes);
-app.use("/api/reports", reportRoutes);
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`📨 Incoming request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Connect to MongoDB
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error("❌ MongoDB Connection Error:", error.message);
+    process.exit(1);
+  }
+};
+
+connectDB();
+
+// Register routes
 app.use("/api/routes", routeRoutes);
+app.use("/api/reports", reportRoutes);
 
-// Health check
+// Health check endpoint
 app.get("/", (req, res) => {
-  res.json({ 
-    message: "Delhi Metro Smart Crowd Navigator API", 
-    version: "2.0",
-    features: ["Route Optimizer", "Community Reports", "Live Map"],
-    status: "active"
-  });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    success: false,
-    message: "Something went wrong!", 
-    error: process.env.NODE_ENV === "development" ? err.message : undefined
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ 
-    success: false,
-    message: "Route not found" 
-  });
+  res.send("🚇 Metro Intelligence Backend Running!");
 });
 
 const PORT = process.env.PORT || 5000;
-
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO enabled for real-time updates`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`✅ Route registered: POST /api/routes/shortest`);
+  console.log(`✅ Reports API registered: /api/reports`);
+  console.log(`✅ Static files served from /data`);
 });
+
 
