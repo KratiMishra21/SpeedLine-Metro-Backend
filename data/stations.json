@@ -1,0 +1,19 @@
+[
+  { "stationId": "rajiv-chowk", "name": "Rajiv Chowk", "coords": { "type": "Point", "coordinates": [77.2195, 28.6328] }, "lines": ["Blue", "Yellow"] },
+  { "stationId": "kashmere-gate", "name": "Kashmere Gate", "coords": { "type": "Point", "coordinates": [77.2273, 28.6670] }, "lines": ["Red", "Yellow", "Violet"] },
+  { "stationId": "hauz-khas", "name": "Hauz Khas", "coords": { "type": "Point", "coordinates": [77.2066, 28.5452] }, "lines": ["Yellow", "Magenta"] },
+  { "stationId": "aiims", "name": "AIIMS", "coords": { "type": "Point", "coordinates": [77.2081, 28.5662] }, "lines": ["Yellow"] },
+  { "stationId": "iit-delhi", "name": "IIT Delhi", "coords": { "type": "Point", "coordinates": [77.1912, 28.5471] }, "lines": ["Magenta"] },
+  { "stationId": "moolchand", "name": "Moolchand", "coords": { "type": "Point", "coordinates": [77.2344, 28.5681] }, "lines": ["Violet"] },
+  { "stationId": "nehru-place", "name": "Nehru Place", "coords": { "type": "Point", "coordinates": [77.2517, 28.5494] }, "lines": ["Violet"] },
+  { "stationId": "lajpat-nagar", "name": "Lajpat Nagar", "coords": { "type": "Point", "coordinates": [77.2433, 28.5682] }, "lines": ["Pink", "Violet"] },
+  { "stationId": "ina", "name": "INA", "coords": { "type": "Point", "coordinates": [77.2090, 28.5754] }, "lines": ["Yellow", "Pink"] },
+  { "stationId": "botanical-garden", "name": "Botanical Garden", "coords": { "type": "Point", "coordinates": [77.3336, 28.5639] }, "lines": ["Blue", "Magenta"] },
+  { "stationId": "dwarka", "name": "Dwarka", "coords": { "type": "Point", "coordinates": [77.0110, 28.5815] }, "lines": ["Blue"] },
+  { "stationId": "dwarka-sector-21", "name": "Dwarka Sector 21", "coords": { "type": "Point", "coordinates": [77.0615, 28.5485] }, "lines": ["Blue", "Airport Express"] },
+  { "stationId": "new-delhi", "name": "New Delhi", "coords": { "type": "Point", "coordinates": [77.2194, 28.6430] }, "lines": ["Yellow", "Airport Express"] },
+  { "stationId": "chandni-chowk", "name": "Chandni Chowk", "coords": { "type": "Point", "coordinates": [77.2274, 28.6562] }, "lines": ["Yellow"] },
+  { "stationId": "karol-bagh", "name": "Karol Bagh", "coords": { "type": "Point", "coordinates": [77.1908, 28.6511] }, "lines": ["Blue"] },
+  { "stationId": "connaught-place", "name": "Connaught Place", "coords": { "type": "Point", "coordinates": [77.2200, 28.6315] }, "lines": ["Blue", "Yellow"] }
+]
+

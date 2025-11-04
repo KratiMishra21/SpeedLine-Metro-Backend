@@ -1,0 +1,20 @@
+[
+  { "from": "dwarka", "to": "dwarka-sector-21", "distance": 2.0, "line": "Blue" },
+  { "from": "dwarka-sector-21", "to": "rajiv-chowk", "distance": 22.0, "line": "Blue" },
+  { "from": "rajiv-chowk", "to": "karol-bagh", "distance": 3.5, "line": "Blue" },
+  { "from": "rajiv-chowk", "to": "new-delhi", "distance": 1.2, "line": "Yellow" },
+  { "from": "new-delhi", "to": "chandni-chowk", "distance": 1.0, "line": "Yellow" },
+  { "from": "chandni-chowk", "to": "kashmere-gate", "distance": 1.2, "line": "Yellow" },
+  { "from": "kashmere-gate", "to": "lajpat-nagar", "distance": 9.5, "line": "Violet" },
+  { "from": "lajpat-nagar", "to": "nehru-place", "distance": 2.0, "line": "Violet" },
+  { "from": "nehru-place", "to": "moolchand", "distance": 1.8, "line": "Violet" },
+  { "from": "lajpat-nagar", "to": "ina", "distance": 3.0, "line": "Pink" },
+  { "from": "ina", "to": "hauz-khas", "distance": 3.5, "line": "Yellow" },
+  { "from": "hauz-khas", "to": "iit-delhi", "distance": 1.0, "line": "Magenta" },
+  { "from": "iit-delhi", "to": "botanical-garden", "distance": 14.0, "line": "Magenta" },
+  { "from": "hauz-khas", "to": "aiims", "distance": 1.2, "line": "Yellow" },
+  { "from": "aiims", "to": "ina", "distance": 1.0, "line": "Yellow" },
+  { "from": "rajiv-chowk", "to": "connaught-place", "distance": 0.5, "line": "Blue" },
+  { "from": "connaught-place", "to": "new-delhi", "distance": 0.8, "line": "Yellow" },
+  { "from": "karol-bagh", "to": "rajiv-chowk", "distance": 3.2, "line": "Blue" }
+]

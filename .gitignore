@@ -1,0 +1,9 @@
+# create .gitignore
+cat > .gitignore <<'EOF'
+node_modules/
+.env
+.env.local
+.DS_Store
+npm-debug.log
+yarn-error.log
+EOF
