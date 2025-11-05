@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 // UPDATED CORS Configuration - Allow your deployed frontend
 const allowedOrigins = [
   'http://localhost:3000',           // Local development
-  'https://metro-frontend-pvv53judu-mishrakrati789-4823s-projects.vercel.app/',  // Replace with your actual Vercel URL
+  'https://metro-frontend-beta.vercel.app/',  // Replace with your actual Vercel URL
   // Add more frontend URLs if needed
 ];
 
