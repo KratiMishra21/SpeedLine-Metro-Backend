@@ -4,22 +4,26 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+
+// Load environment variables FIRST
+dotenv.config();
+
+// Import routes
 import routeRoutes from "./src/routes/routeRoutes.js";
 import reportRoutes from "./src/routes/reportRoutes.js";
-import liveMapRoutes from './routes/liveMapRoutes.js';
-app.use('/api/metro-map', liveMapRoutes);
-dotenv.config();
+import liveMapRoutes from './src/routes/liveMapRoutes.js';  // Fixed path - added 'src/'
+
+// Create Express app
 const app = express();
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// UPDATED CORS Configuration - Allow your deployed frontend
+// CORS Configuration
 const allowedOrigins = [
-  'http://localhost:3000',           // Local development
-  'https://metro-frontend-beta.vercel.app/',  // Replace with your actual Vercel URL
-  // Add more frontend URLs if needed
+  'http://localhost:3000',
+  'https://metro-frontend-beta.vercel.app',  // Removed trailing slash
 ];
 
 app.use(cors({
@@ -37,15 +41,17 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Body parsing middleware
 app.use(express.json());
-app.use(express.urlencoded({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Serve static files from data folder
 app.use("/data", express.static(path.join(__dirname, "data")));
 
 // Debug middleware
 app.use((req, res, next) => {
-  console.log(`📨 Incoming request: ${req.method} ${req.originalUrl}`);
+  console.log(`📨 ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -62,21 +68,52 @@ const connectDB = async () => {
 
 connectDB();
 
-// Register routes
-app.use("/api/routes", routeRoutes);
-app.use("/api/reports", reportRoutes);
-
 // Health check endpoint
 app.get("/", (req, res) => {
-  res.send("🚇 Metro Intelligence Backend Running!");
+  res.json({
+    message: "🚇 Metro Intelligence Backend Running!",
+    status: "active",
+    version: "2.0",
+    endpoints: {
+      routes: "/api/routes",
+      reports: "/api/reports",
+      metroMap: "/api/metro-map"
+    }
+  });
 });
 
+// Register API routes
+app.use("/api/routes", routeRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/metro-map", liveMapRoutes);
+
+// 404 handler - must be AFTER all routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.path,
+    availableRoutes: ["/api/routes", "/api/reports", "/api/metro-map"]
+  });
+});
+
+// Error handler - must be LAST
+app.use((err, req, res, next) => {
+  console.error("❌ Error:", err.message);
+  res.status(500).json({
+    success: false,
+    message: "Something went wrong!",
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+  });
+});
+
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`✅ Route registered: POST /api/routes/shortest`);
-  console.log(`✅ Reports API registered: /api/reports`);
-  console.log(`✅ Static files served from /data`);
+  console.log(`✅ Routes API: /api/routes`);
+  console.log(`✅ Reports API: /api/reports`);
+  console.log(`✅ Metro Map API: /api/metro-map`);
+  console.log(`✅ Static files: /data`);
 });
-
 
