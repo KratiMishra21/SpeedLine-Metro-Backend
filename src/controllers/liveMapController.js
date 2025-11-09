@@ -1,13 +1,40 @@
 import Station from '../models/station.js';
 import Report from '../models/report-community.js';
 
+/**
+ * Normalize crowd level to standard format
+ * Handles: light/low, moderate/medium, heavy/high
+ */
+function normalizeCrowdLevel(level) {
+  if (!level) return 'low';
+  
+  const normalized = level.toLowerCase().trim();
+  
+  // Map various formats to standard: low, moderate, high
+  if (normalized === 'light' || normalized === 'low') return 'low';
+  if (normalized === 'moderate' || normalized === 'medium') return 'moderate';
+  if (normalized === 'heavy' || normalized === 'high') return 'high';
+  
+  return 'low'; // default
+}
+
+/**
+ * Map normalized level to frontend expected format
+ */
+function mapToFrontendLevel(level) {
+  if (level === 'low') return 'low';
+  if (level === 'moderate') return 'medium'; // Frontend expects 'medium'
+  if (level === 'high') return 'high';
+  return 'low';
+}
+
 export const getLiveMapData = async (req, res) => {
   try {
-    console.log('Fetching live map data...');
+    console.log('🚀 Fetching live map data...');
     
     // Get all stations
     const stations = await Station.find({});
-    console.log(`Found ${stations.length} stations`);
+    console.log(`📍 Found ${stations.length} stations`);
     
     if (!stations || stations.length === 0) {
       return res.status(200).json({
@@ -21,39 +48,61 @@ export const getLiveMapData = async (req, res) => {
       });
     }
     
-    // Get recent reports for all stations (last 2 hours)
+    // Get recent reports (last 2 hours)
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const recentReports = await Report.find({
       createdAt: { $gte: twoHoursAgo }
-    });
+    }).sort({ createdAt: -1 });
     
-    console.log(`Found ${recentReports.length} recent reports`);
+    console.log(`📊 Found ${recentReports.length} recent reports`);
+    
+    // Debug: Log first few reports to see what data we have
+    if (recentReports.length > 0) {
+      console.log('Sample report:', {
+        station: recentReports[0].station,
+        level: recentReports[0].level,
+        crowdLevel: recentReports[0].crowdLevel,
+        createdAt: recentReports[0].createdAt
+      });
+    }
 
     // Group reports by station
     const stationReportsMap = {};
     
     recentReports.forEach(report => {
-      const stationId = report.station; // This is the stationId string (e.g., "rajiv-chowk")
+      const stationId = report.station; // stationId string like "rajiv-chowk"
+      
       if (!stationReportsMap[stationId]) {
         stationReportsMap[stationId] = [];
       }
       stationReportsMap[stationId].push(report);
     });
 
+    console.log(`🗺️ Reports grouped for ${Object.keys(stationReportsMap).length} stations`);
+
     // Calculate crowd level for each station
     const liveStationData = stations.map(station => {
       const stationReports = stationReportsMap[station.stationId] || [];
       
-      let crowdLevel = 'low'; // default when no reports
+      let crowdLevel = 'low'; // default
       let reportCount = stationReports.length;
       
       if (stationReports.length > 0) {
+        console.log(`\n🔍 Processing ${station.name}:`);
+        console.log(`   Reports: ${stationReports.length}`);
+        
         // Calculate weighted average based on time and likes
         const now = Date.now();
         let totalWeight = 0;
         const scores = { low: 0, moderate: 0, high: 0 };
         
         stationReports.forEach(report => {
+          // Get crowd level from either 'level' or 'crowdLevel' field
+          const rawLevel = report.crowdLevel || report.level;
+          const normalizedLevel = normalizeCrowdLevel(rawLevel);
+          
+          console.log(`   - Report: ${rawLevel} → ${normalizedLevel}, ${report.likes} likes`);
+          
           // Time decay: newer reports have more weight
           const ageMinutes = (now - new Date(report.createdAt).getTime()) / (1000 * 60);
           const timeWeight = Math.exp(-ageMinutes / 60); // Exponential decay over 60 mins
@@ -63,13 +112,7 @@ export const getLiveMapData = async (req, res) => {
           
           const weight = timeWeight * credibilityWeight;
           
-          // Map 'moderate' to 'medium' if needed
-          const level = report.level === 'moderate' ? 'moderate' : report.level;
-          
-          if (level === 'low') scores.low += weight;
-          else if (level === 'moderate') scores.moderate += weight;
-          else if (level === 'high') scores.high += weight;
-          
+          scores[normalizedLevel] += weight;
           totalWeight += weight;
         });
         
@@ -81,14 +124,18 @@ export const getLiveMapData = async (req, res) => {
             high: scores.high / totalWeight
           };
           
+          console.log(`   Scores:`, normalizedScores);
+          
           // Find the highest score
           if (normalizedScores.high > normalizedScores.moderate && normalizedScores.high > normalizedScores.low) {
             crowdLevel = 'high';
           } else if (normalizedScores.moderate > normalizedScores.low) {
-            crowdLevel = 'medium';
+            crowdLevel = 'moderate';
           } else {
             crowdLevel = 'low';
           }
+          
+          console.log(`   Final level: ${crowdLevel}`);
         }
       }
 
@@ -105,16 +152,22 @@ export const getLiveMapData = async (req, res) => {
         _id: station._id,
         stationId: station.stationId,
         name: station.name,
-        coordinates: station.coords.coordinates, // [lng, lat] - GeoJSON format
+        coordinates: station.coords.coordinates,
         lines: station.lines || [],
         isInterchange: station.lines && station.lines.length > 1,
-        crowdLevel,
+        crowdLevel: mapToFrontendLevel(crowdLevel), // Map to frontend format
         reportCount,
         lastUpdated
       };
     });
 
-    console.log('Live station data prepared successfully');
+    // Log summary
+    const crowdStats = {
+      low: liveStationData.filter(s => s.crowdLevel === 'low').length,
+      medium: liveStationData.filter(s => s.crowdLevel === 'medium').length,
+      high: liveStationData.filter(s => s.crowdLevel === 'high').length,
+    };
+    console.log('\n📊 Final crowd distribution:', crowdStats);
 
     res.json({
       success: true,
@@ -125,7 +178,7 @@ export const getLiveMapData = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Live map data error:', error);
+    console.error('❌ Live map data error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch live map data',
@@ -137,15 +190,13 @@ export const getLiveMapData = async (req, res) => {
 export const getStationDetails = async (req, res) => {
   try {
     const { stationId } = req.params;
-    console.log('Fetching details for station:', stationId);
+    console.log('🔍 Fetching details for station:', stationId);
     
     // Find station by MongoDB _id or stationId slug
     let station;
     if (stationId.match(/^[0-9a-fA-F]{24}$/)) {
-      // MongoDB ObjectId
       station = await Station.findById(stationId);
     } else {
-      // Station slug (e.g., "rajiv-chowk")
       station = await Station.findOne({ stationId: stationId });
     }
     
@@ -156,14 +207,14 @@ export const getStationDetails = async (req, res) => {
       });
     }
 
-    // Get recent reports (last 1 hour) using stationId
+    // Get recent reports (last 1 hour)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const recentReports = await Report.find({
-      station: station.stationId, // Use stationId string, not _id
+      station: station.stationId,
       createdAt: { $gte: oneHourAgo }
     }).sort({ createdAt: -1 }).limit(10);
 
-    console.log(`Found ${recentReports.length} reports for station ${station.name}`);
+    console.log(`📊 Found ${recentReports.length} reports for ${station.name}`);
 
     // Calculate current crowd level
     let currentCrowdLevel = 'low';
@@ -173,21 +224,18 @@ export const getStationDetails = async (req, res) => {
       let totalWeight = 0;
       const scores = { low: 0, moderate: 0, high: 0 };
       
-      // Use only the 5 most recent reports for current level
       const last5Reports = recentReports.slice(0, 5);
       
       last5Reports.forEach(report => {
+        const rawLevel = report.crowdLevel || report.level;
+        const normalizedLevel = normalizeCrowdLevel(rawLevel);
+        
         const ageMinutes = (now - new Date(report.createdAt).getTime()) / (1000 * 60);
-        const timeWeight = Math.exp(-ageMinutes / 30); // Faster decay for current level
+        const timeWeight = Math.exp(-ageMinutes / 30);
         const credibilityWeight = 1 + Math.log(report.likes + 1) * 0.3;
         const weight = timeWeight * credibilityWeight;
         
-        const level = report.level === 'moderate' ? 'moderate' : report.level;
-        
-        if (level === 'low') scores.low += weight;
-        else if (level === 'moderate') scores.moderate += weight;
-        else if (level === 'high') scores.high += weight;
-        
+        scores[normalizedLevel] += weight;
         totalWeight += weight;
       });
       
@@ -201,9 +249,7 @@ export const getStationDetails = async (req, res) => {
         if (normalizedScores.high > normalizedScores.moderate && normalizedScores.high > normalizedScores.low) {
           currentCrowdLevel = 'high';
         } else if (normalizedScores.moderate > normalizedScores.low) {
-          currentCrowdLevel = 'medium';
-        } else {
-          currentCrowdLevel = 'low';
+          currentCrowdLevel = 'moderate';
         }
       }
     }
@@ -219,10 +265,10 @@ export const getStationDetails = async (req, res) => {
           lines: station.lines || [],
           isInterchange: station.lines && station.lines.length > 1
         },
-        currentCrowdLevel,
+        currentCrowdLevel: mapToFrontendLevel(currentCrowdLevel),
         recentReports: recentReports.map(r => ({
           _id: r._id,
-          crowdLevel: r.level,
+          crowdLevel: normalizeCrowdLevel(r.crowdLevel || r.level),
           remarks: r.remarks,
           likes: r.likes,
           createdAt: r.createdAt,
@@ -232,7 +278,7 @@ export const getStationDetails = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Station details error:', error);
+    console.error('❌ Station details error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch station details',
@@ -241,7 +287,6 @@ export const getStationDetails = async (req, res) => {
   }
 };
 
-// Get nearby stations based on coordinates
 export const getNearbyStations = async (req, res) => {
   try {
     const { longitude, latitude, maxDistance = 5000 } = req.query;
@@ -276,7 +321,6 @@ export const getNearbyStations = async (req, res) => {
       }
     }).limit(10);
 
-    // Get crowd data for nearby stations
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const stationIds = stations.map(s => s.stationId);
     const recentReports = await Report.find({
@@ -284,7 +328,6 @@ export const getNearbyStations = async (req, res) => {
       createdAt: { $gte: twoHoursAgo }
     });
 
-    // Group reports by station
     const stationReportsMap = {};
     recentReports.forEach(report => {
       if (!stationReportsMap[report.station]) {
@@ -293,7 +336,6 @@ export const getNearbyStations = async (req, res) => {
       stationReportsMap[report.station].push(report);
     });
 
-    // Add crowd info to stations
     const stationsWithCrowd = stations.map(station => {
       const reports = stationReportsMap[station.stationId] || [];
       
@@ -304,16 +346,15 @@ export const getNearbyStations = async (req, res) => {
         const scores = { low: 0, moderate: 0, high: 0 };
         
         reports.forEach(report => {
+          const rawLevel = report.crowdLevel || report.level;
+          const normalizedLevel = normalizeCrowdLevel(rawLevel);
+          
           const ageMinutes = (now - new Date(report.createdAt).getTime()) / (1000 * 60);
           const timeWeight = Math.exp(-ageMinutes / 60);
           const credibilityWeight = 1 + Math.log(report.likes + 1) * 0.3;
           const weight = timeWeight * credibilityWeight;
           
-          const level = report.level === 'moderate' ? 'moderate' : report.level;
-          if (level === 'low') scores.low += weight;
-          else if (level === 'moderate') scores.moderate += weight;
-          else if (level === 'high') scores.high += weight;
-          
+          scores[normalizedLevel] += weight;
           totalWeight += weight;
         });
         
@@ -327,7 +368,7 @@ export const getNearbyStations = async (req, res) => {
           if (normalizedScores.high > normalizedScores.moderate && normalizedScores.high > normalizedScores.low) {
             crowdLevel = 'high';
           } else if (normalizedScores.moderate > normalizedScores.low) {
-            crowdLevel = 'medium';
+            crowdLevel = 'moderate';
           }
         }
       }
@@ -339,7 +380,7 @@ export const getNearbyStations = async (req, res) => {
         coordinates: station.coords.coordinates,
         lines: station.lines || [],
         isInterchange: station.lines && station.lines.length > 1,
-        crowdLevel,
+        crowdLevel: mapToFrontendLevel(crowdLevel),
         reportCount: reports.length
       };
     });
@@ -354,7 +395,7 @@ export const getNearbyStations = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Nearby stations error:', error);
+    console.error('❌ Nearby stations error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch nearby stations',
