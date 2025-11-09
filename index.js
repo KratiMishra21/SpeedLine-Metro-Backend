@@ -6,7 +6,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import routeRoutes from "./src/routes/routeRoutes.js";
 import reportRoutes from "./src/routes/reportRoutes.js";
-
+import liveMapRoutes from './routes/liveMapRoutes.js';
+app.use('/api/metro-map', liveMapRoutes);
 dotenv.config();
 const app = express();
 

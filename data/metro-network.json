@@ -1,0 +1,205 @@
+{
+  "stations": [
+    {
+      "id": "kashmere_gate",
+      "name": "Kashmere Gate",
+      "coordinates": [28.6679, 77.2273],
+      "lines": ["red", "yellow", "violet"],
+      "isInterchange": true
+    },
+    {
+      "id": "rajiv_chowk",
+      "name": "Rajiv Chowk",
+      "coordinates": [28.6328, 77.2197],
+      "lines": ["blue", "yellow"],
+      "isInterchange": true
+    },
+    {
+      "id": "aiims",
+      "name": "AIIMS",
+      "coordinates": [28.5689, 77.2071],
+      "lines": ["yellow"],
+      "isInterchange": false
+    },
+    {
+      "id": "hauz_khas",
+      "name": "Hauz Khas",
+      "coordinates": [28.5494, 77.2066],
+      "lines": ["yellow", "magenta"],
+      "isInterchange": true
+    },
+    {
+      "id": "iit_delhi",
+      "name": "IIT Delhi",
+      "coordinates": [28.5450, 77.1926],
+      "lines": ["magenta"],
+      "isInterchange": false
+    },
+    {
+      "id": "moolchand",
+      "name": "Moolchand",
+      "coordinates": [28.5680, 77.2340],
+      "lines": ["violet"],
+      "isInterchange": false
+    },
+    {
+      "id": "nehru_place",
+      "name": "Nehru Place",
+      "coordinates": [28.5496, 77.2510],
+      "lines": ["violet"],
+      "isInterchange": false
+    },
+    {
+      "id": "lajpat_nagar",
+      "name": "Lajpat Nagar",
+      "coordinates": [28.5671, 77.2436],
+      "lines": ["violet", "pink"],
+      "isInterchange": true
+    },
+    {
+      "id": "ina",
+      "name": "INA",
+      "coordinates": [28.5755, 77.2091],
+      "lines": ["yellow", "pink"],
+      "isInterchange": true
+    },
+    {
+      "id": "botanical_garden",
+      "name": "Botanical Garden",
+      "coordinates": [28.5643, 77.3347],
+      "lines": ["blue", "magenta"],
+      "isInterchange": true
+    },
+    {
+      "id": "dwarka",
+      "name": "Dwarka",
+      "coordinates": [28.5921, 77.0460],
+      "lines": ["blue"],
+      "isInterchange": false
+    },
+    {
+      "id": "dwarka_sec21",
+      "name": "Dwarka Sector 21",
+      "coordinates": [28.5562, 77.0678],
+      "lines": ["blue", "orange"],
+      "isInterchange": true
+    },
+    {
+      "id": "new_delhi",
+      "name": "New Delhi",
+      "coordinates": [28.6430, 77.2194],
+      "lines": ["yellow", "orange"],
+      "isInterchange": true
+    },
+    {
+      "id": "chandni_chowk",
+      "name": "Chandni Chowk",
+      "coordinates": [28.6560, 77.2304],
+      "lines": ["yellow"],
+      "isInterchange": false
+    },
+    {
+      "id": "karol_bagh",
+      "name": "Karol Bagh",
+      "coordinates": [28.6423, 77.1887],
+      "lines": ["blue"],
+      "isInterchange": false
+    },
+    {
+      "id": "connaught_place",
+      "name": "Connaught Place",
+      "coordinates": [28.6315, 77.2167],
+      "lines": ["blue", "yellow"],
+      "isInterchange": true
+    }
+  ],
+  "lines": {
+  "red": {
+    "name": "Red Line",
+    "color": "#EF4444",
+    "stations": [
+      "rithala",
+      "rohini_east",
+      "kashmere_gate",
+      "dilshad_garden"
+    ]
+  },
+  "blue": {
+    "name": "Blue Line",
+    "color": "#3B82F6",
+    "stations": [
+      "dwarka",
+      "dwarka_sec21",
+      "karol_bagh",
+      "rajiv_chowk",
+      "connaught_place",
+      "botanical_garden",
+      "noida_city_centre"
+    ]
+  },
+  "yellow": {
+    "name": "Yellow Line",
+    "color": "#EAB308",
+    "stations": [
+      "samaypur_badli",
+      "kashmere_gate",
+      "chandni_chowk",
+      "new_delhi",
+      "rajiv_chowk",
+      "connaught_place",
+      "ina",
+      "aiims",
+      "hauz_khas",
+      "huda_city_centre"
+    ]
+  },
+  "violet": {
+    "name": "Violet Line",
+    "color": "#8B5CF6",
+    "stations": [
+      "kashmere_gate",
+      "moolchand",
+      "lajpat_nagar",
+      "nehru_place",
+      "central_secretariat",
+      "escorts_mujesar"
+    ]
+  },
+  "magenta": {
+    "name": "Magenta Line",
+    "color": "#C026D3",
+    "stations": [
+      "botanical_garden",
+      "iit_delhi",
+      "hauz_khas",
+      "ina"
+    ]
+  },
+  "pink": {
+    "name": "Pink Line",
+    "color": "#EC4899",
+    "stations": [
+      "ina",
+      "lajpat_nagar"
+    ]
+  },
+  "green": {
+    "name": "Green Line",
+    "color": "#10B981",
+    "stations": [
+      "kirti_nagar",
+      "ashok_park_main",
+      "brigadier_hoshiar_singh"
+    ]
+  },
+  "orange": {
+    "name": "Airport Express Line",
+    "color": "#F97316",
+    "stations": [
+      "new_delhi",
+      "dwarka_sec21"
+    ]
+  }
+}
+
+}
