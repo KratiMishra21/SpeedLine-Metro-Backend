@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const reportSchema = new mongoose.Schema({
   station: String,
   level: String,
+  crowdLevel: String,
   remarks: String,
   userId: String,
   photo: String,
