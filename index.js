@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Station from './src/models/station.js';
 import Edge from './src/models/edge.js';
+import fs from 'fs';
 
 // Load environment variables FIRST
 dotenv.config();
