@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import Station from './src/models/station.js';
+import Edge from './src/models/edge.js';
 
 // Load environment variables FIRST
 dotenv.config();
@@ -88,9 +90,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/metro-map", liveMapRoutes);
 
 // TEMPORARY SEED ROUTE - remove after running once
-import fs from 'fs';
-import Station from './src/models/station.js';
-import Edge from './src/models/edge.js';
+
 
 app.get('/run-seed', async (req, res) => {
   try {
