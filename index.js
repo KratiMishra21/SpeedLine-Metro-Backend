@@ -102,7 +102,11 @@ app.get('/run-seed', async (req, res) => {
     const edgesData = JSON.parse(fs.readFileSync('./data/edges.json', 'utf-8'));
 
     await Station.insertMany(stationsData);
-    await Edge.insertMany(edgesData);
+ const edgesWithTravelTime = edgesData.map(e => ({
+  ...e,
+  travelTime: e.distance
+}));
+await Edge.insertMany(edgesWithTravelTime);
 
     res.json({ success: true, message: `Seeded ${stationsData.length} stations and ${edgesData.length} edges` });
   } catch (err) {
