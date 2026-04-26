@@ -90,29 +90,7 @@ app.use("/api/routes", routeRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/metro-map", liveMapRoutes);
 
-// TEMPORARY SEED ROUTE - remove after running once
 
-
-app.get('/run-seed', async (req, res) => {
-  try {
-    await Station.deleteMany({});
-    await Edge.deleteMany({});
-
-    const stationsData = JSON.parse(fs.readFileSync('./data/stations.json', 'utf-8'));
-    const edgesData = JSON.parse(fs.readFileSync('./data/edges.json', 'utf-8'));
-
-    await Station.insertMany(stationsData);
- const edgesWithTravelTime = edgesData.map(e => ({
-  ...e,
-  travelTime: e.distance
-}));
-await Edge.insertMany(edgesWithTravelTime);
-
-    res.json({ success: true, message: `Seeded ${stationsData.length} stations and ${edgesData.length} edges` });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // 404 handler - must be AFTER all routes
 app.use((req, res) => {
