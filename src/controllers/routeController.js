@@ -54,6 +54,11 @@ export const getShortestRoute = async (req, res) => {
 
     // --- Run Dijkstra's Algorithm using stationIds ---
     const result = dijkstra(graph, fromStation.stationId, toStation.stationId);
+
+    if (!result) {
+      console.log("❌ [Controller] No route found");
+      return res.status(404).json({ error: "No route found between given stations." });
+    }
     
     // Convert stationIds back to station names
     const pathWithNames = result.path.map(id => {
@@ -61,10 +66,7 @@ export const getShortestRoute = async (req, res) => {
       return station ? station.name : id;
     });
 
-    if (!result) {
-      console.log("❌ [Controller] No route found");
-      return res.status(404).json({ error: "No route found between given stations." });
-    }
+    
 
     console.log("✅ [Controller] Route found:", pathWithNames);
     res.json({
