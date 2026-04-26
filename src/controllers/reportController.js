@@ -17,6 +17,7 @@ export const submitReport = async (req, res) => {
     const newReport = new Report({
       station,
       level,
+      crowdLevel: level,
       remarks: remarks || "",
       userId,
     });
